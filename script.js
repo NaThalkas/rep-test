@@ -1,89 +1,156 @@
 const SUPABASE_URL = "https://rdyyrjgolxxvzumcmjlb.supabase.co";
 const SUPABASE_KEY = "sb_publishable_3KJmCBUaBR6Yup-yd92POQ_FaCacMBr";
+
 const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let tableData = []; 
 
-// 1. Logowanie
+// 1. ŁADOWANIE KONFIGURACJI Z PLIKU
+async function loadConfig() {
+    try {
+        const response = await fetch('src/bd.txt');
+        const text = await response.text();
+        const lines = text.trim().split('\n');
+        
+        const menuStructure = {};
+
+        lines.forEach(line => {
+            const [dbName, shortAlias, subMenu, mainTitle] = line.split(',');
+            tableData.push({ dbName, shortAlias, subMenu, mainTitle });
+
+            if (!menuStructure[mainTitle]) menuStructure[mainTitle] = [];
+            menuStructure[mainTitle].push({ dbName, subMenu });
+        });
+
+        buildMenu(menuStructure);
+        buildTableSelect();
+    } catch (err) {
+        console.error("Błąd ładowania bd.txt:", err);
+    }
+}
+
+// 2. BUDOWANIE DYNAMICZNEGO MENU
+function buildMenu(structure) {
+    const nav = document.getElementById('dynamic-menu');
+    nav.innerHTML = ''; // Czyścimy przed budowaniem
+    for (const mainTitle in structure) {
+        const dropdown = document.createElement('div');
+        dropdown.className = 'dropdown';
+        dropdown.innerHTML = `
+            <button class="dropbtn">${mainTitle} ▾</button>
+            <div class="dropdown-content">
+                ${structure[mainTitle].map(item => `<a onclick="setTable('${item.dbName}')">${item.subMenu}</a>`).join('')}
+            </div>
+        `;
+        nav.appendChild(dropdown);
+    }
+}
+
+// 3. WYPEŁNIANIE SELECTA W FORMULARZU
+function buildTableSelect() {
+    const select = document.getElementById('table-select');
+    select.innerHTML = ''; 
+    tableData.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.dbName;
+        opt.textContent = `${item.mainTitle} - ${item.subMenu}`;
+        select.appendChild(opt);
+    });
+}
+
+// 4. KLIKNIĘCIE W KATEGORIĘ - POBIERANIE DANYCH
+async function setTable(name) {
+    // Ustawiamy tabelę w ukrytym selectcie formularza
+    document.getElementById('table-select').value = name;
+    
+    // Ukrywamy formularz dodawania (żeby nie zasłaniał bazy)
+    document.getElementById('add-card').style.display = 'none';
+
+    const contentArea = document.getElementById('content-area');
+    contentArea.innerHTML = '<h2>Ładowanie danych...</h2>';
+
+    try {
+        const { data, error } = await sbClient
+            .from(name)
+            .select('*');
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            contentArea.innerHTML = '<h2 class="empty-state">Baza danych pusta</h2>';
+        } else {
+            // Generujemy listę pytań
+            contentArea.innerHTML = `<h2>Zawartość: ${name}</h2>`;
+            data.forEach((q, index) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'question-item';
+                qDiv.innerHTML = `
+                    <div class="card">
+                        <p><strong>${index + 1}. ${q.pytanie}</strong></p>
+                        <ul style="list-style: none; padding-left: 10px;">
+                            <li>A) ${q.odp_a}</li>
+                            <li>B) ${q.odp_b}</li>
+                            <li>C) ${q.odp_c}</li>
+                            <li>D) ${q.odp_d}</li>
+                        </ul>
+                        <p style="color: green;">Poprawna: <strong>${q.poprawna}</strong></p>
+                    </div>
+                `;
+                contentArea.appendChild(qDiv);
+            });
+        }
+    } catch (err) {
+        contentArea.innerHTML = `<h2 style="color:red;">Błąd: ${err.message}</h2>`;
+    }
+}
+
+// 5. POKAZYWANIE PANELU DODAWANIA (NA PRZYCISK +)
+function showAddPanel() {
+    const card = document.getElementById('add-card');
+    // Przełączanie widoczności (toggle)
+    if(card.style.display === 'none' || card.style.display === '') {
+        card.style.display = 'block';
+        // Przewiń do formularza
+        card.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        card.style.display = 'none';
+    }
+}
+
 function checkPassword() {
-    if (document.getElementById('passInput').value === "JacaPraca") {
+    const userTyped = document.getElementById('passInput').value;
+    const secretPassword = "JacaPraca"; 
+
+    if (userTyped === secretPassword) {
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('main-nav').style.display = 'flex';
-        document.getElementById('main-container').style.display = 'block';
-        loadConfig();
-    } else { alert("Hasło złe!"); }
+        document.getElementById('content-area').style.display = 'block';
+        loadConfig(); 
+    } else {
+        alert("Błąd! Niepoprawne hasło.");
+    }
 }
 
-// 2. Ładowanie konfiguracji menu
-async function loadConfig() {
-    const response = await fetch('src/bd.txt');
-    const text = await response.text();
-    const menuStructure = {};
-    text.trim().split('\n').forEach(line => {
-        const [dbName, alias, sub, main] = line.split(',');
-        tableData.push({ dbName, sub, main });
-        if (!menuStructure[main]) menuStructure[main] = [];
-        menuStructure[main].push({ dbName, sub });
-    });
-    renderMenu(menuStructure);
-}
-
-function renderMenu(structure) {
-    const nav = document.getElementById('dynamic-menu');
-    nav.innerHTML = Object.keys(structure).map(main => `
-        <div class="dropdown">
-            <button class="dropbtn">${main} ▾</button>
-            <div class="dropdown-content">
-                ${structure[main].map(i => `<a onclick="renderTableView('${i.dbName}')">${i.sub}</a>`).join('')}
-            </div>
-        </div>
-    `).join('');
-}
-
-// 3. WIDOK: DODAJ DO BAZY (Wstrzykuje HTML formularza)
-function renderAddForm() {
-    const content = document.getElementById('app-content');
-    content.innerHTML = `
-        <div class="card">
-            <h2>Dodaj do bazy</h2>
-            <select id="t-select">${tableData.map(t => `<option value="${t.dbName}">${t.main} - ${t.sub}</option>`).join('')}</select>
-            <input type="text" id="q" placeholder="Pytanie">
-            <div class="grid-inputs">
-                <input type="text" id="a" placeholder="Odp A"> <input type="text" id="b" placeholder="Odp B">
-                <input type="text" id="c" placeholder="Odp C"> <input type="text" id="d" placeholder="Odp D">
-            </div>
-            <select id="cor"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
-            <button class="submit-btn" onclick="save()">Wyślij</button>
-        </div>
-    `;
-}
-
-// 4. WIDOK: TABELA (Wstrzykuje HTML tabeli)
-async function renderTableView(name) {
-    const content = document.getElementById('app-content');
-    content.innerHTML = "<h2>Ładowanie...</h2>";
-    const { data } = await sbClient.from(name).select('*');
-    
-    content.innerHTML = `<h1>Baza: ${name}</h1>` + data.map(q => `
-        <div class="card">
-            <p><strong>${q.pytanie}</strong></p>
-            <p>A: ${q.odp_a} | B: ${q.odp_b} | C: ${q.odp_c} | D: ${q.odp_d}</p>
-            <p style="color:green">Poprawna: ${q.poprawna}</p>
-        </div>
-    `).join('');
-}
-
-// 5. Zapisywanie
-async function save() {
+async function sendToDatabase() {
+    const table = document.getElementById('table-select').value;
     const payload = {
-        pytanie: document.getElementById('q').value,
-        odp_a: document.getElementById('a').value,
-        odp_b: document.getElementById('b').value,
-        odp_c: document.getElementById('c').value,
-        odp_d: document.getElementById('d').value,
-        poprawna: document.getElementById('cor').value
+        pytanie: document.getElementById('q_text').value,
+        odp_a: document.getElementById('ans_a').value,
+        odp_b: document.getElementById('ans_b').value,
+        odp_c: document.getElementById('ans_c').value,
+        odp_d: document.getElementById('ans_d').value,
+        poprawna: document.getElementById('correct_ans').value
     };
-    const table = document.getElementById('t-select').value;
+
     const { error } = await sbClient.from(table).insert([payload]);
-    if (error) alert(error.message); else { alert("Dodano!"); renderTableView(table); }
+    if (error) alert(error.message);
+    else { 
+        alert("Dodano!"); 
+        clearForm(); 
+        setTable(table); // Odśwież widok po dodaniu
+    }
+}
+
+function clearForm() {
+    document.querySelectorAll('#add-card input').forEach(i => i.value = "");
 }
