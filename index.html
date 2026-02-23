@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Edukacyjny</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <h2>Podaj hasło dostępu</h2>
+        <input type="password" id="passInput">
+        <button onclick="checkPassword()">Wejdź</button>
+    </div>
+
+    <nav class="navbar" id="main-nav" style="display: none;">
+        <div id="dynamic-menu" class="menu-container">
+            </div>
+        <button class="add-btn" onclick="showAddPanel()">➕ Dodaj do bazy</button>
+    </nav>
+
+    <div class="container" id="content-area">
+        <div class="card" id="add-card" style="display: none;">
+            <h2 id="form-title">Nowy rekord</h2>
+            
+            <label>Dodawanie do:</label>
+            <select id="table-select"></select>
+
+            <div class="divider"></div>
+
+            <label>Treść pytania:</label>
+            <input type="text" id="q_text" placeholder="Wpisz treść pytania...">
+            
+            <div class="grid-inputs">
+                <div><label>Opcja A:</label><input type="text" id="ans_a"></div>
+                <div><label>Opcja B:</label><input type="text" id="ans_b"></div>
+                <div><label>Opcja C:</label><input type="text" id="ans_c"></div>
+                <div><label>Opcja D:</label><input type="text" id="ans_d"></div>
+            </div>
+
+            <label>Poprawna odpowiedź:</label>
+            <select id="correct_ans">
+                <option value="A">A</option><option value="B">B</option>
+                <option value="C">C</option><option value="D">D</option>
+            </select>
+
+            <button class="submit-btn" onclick="sendToDatabase()">🚀 Wyślij do bazy</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
