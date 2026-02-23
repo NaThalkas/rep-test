@@ -81,8 +81,12 @@ function buildMenu(structure) {
     for (const mainTitle in structure) {
         const dropdown = document.createElement('div');
         dropdown.className = 'dropdown';
+        
+        // .replace(' ', '<br>') zamieni pierwszą spację na przejście do nowej linii
+        const titleWithEnter = mainTitle.replace(' ', '<br>');
+        
         dropdown.innerHTML = `
-            <button class="dropbtn">${mainTitle} ▾</button>
+            <button class="dropbtn">${titleWithEnter} ▾</button>
             <div class="dropdown-content">
                 ${structure[mainTitle].map(item => `<a onclick="setTable('${item.dbName}')">${item.subMenu}</a>`).join('')}
             </div>
@@ -102,39 +106,103 @@ function buildTableSelect() {
     });
 }
 
+// Dodatkowa funkcja mieszająca (Algorytm Fisher-Yates)
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 // 3. OBSŁUGA WIDOKÓW (KLUCZOWE POPRAWKI)
 async function setTable(name) {
-    // Ukrywamy formularz dodawania
     document.getElementById('add-card').style.display = 'none';
     const contentArea = document.getElementById('content-area');
     document.getElementById('table-select').value = name;
 
-    contentArea.innerHTML = `<h2>Ładowanie: ${name}...</h2>`;
+    const currentInfo = tableData.find(item => item.dbName === name);
+    const displayTitle = currentInfo ? `${currentInfo.mainTitle} - ${currentInfo.subMenu}` : name;
+
+    contentArea.innerHTML = `<h2>${displayTitle}</h2>`;
 
     try {
         const { data, error } = await sbClient.from(name).select('*');
         if (error) throw error;
 
-        contentArea.innerHTML = `<h2>Baza: ${name}</h2>`;
-        if (!data || data.length === 0) {
-            contentArea.innerHTML += '<p>Baza jest pusta.</p>';
-        } else {
-            data.forEach((q, index) => {
-                const qDiv = document.createElement('div');
-                qDiv.className = 'card question-item';
-                qDiv.style.marginBottom = "15px";
-                qDiv.innerHTML = `
-                    <p><strong>${index + 1}. ${q.pytanie}</strong></p>
-                    <p>A: ${q.odp_a} | B: ${q.odp_b} | C: ${q.odp_c} | D: ${q.odp_d}</p>
-                    <p style="color: green;">Poprawna: <strong>${q.poprawna}</strong></p>
-                `;
-                contentArea.appendChild(qDiv);
-            });
-        }
+        data.forEach((q, index) => {
+            const qDiv = document.createElement('div');
+            qDiv.className = 'quiz-card';
+
+            // 1. Przygotowanie kodu (zachowanie wcięć)
+            let codeSection = "";
+            const hasCode = q.code && 
+                            q.code !== null && 
+                            q.code.toString().toLowerCase() !== "null" && 
+                            q.code.trim() !== "";
+
+            if (hasCode) {
+                codeSection = `
+                    <div class="code-container">
+                        <pre class="code-block"><code>${q.code}</code></pre>
+                    </div>`;
+            }
+
+            // 2. MIESZANIE ODPOWIEDZI
+            // Tworzymy tablicę obiektów, żeby pamiętać, która treść to która litera
+            let options = [
+                { letter: 'A', text: q.odp_a },
+                { letter: 'B', text: q.odp_b },
+                { letter: 'C', text: q.odp_c },
+                { letter: 'D', text: q.odp_d }
+            ];
+
+            // Wywołujemy mieszanie
+            options = shuffleArray(options);
+
+            // 3. Generowanie HTML z wymieszanymi przyciskami
+            qDiv.innerHTML = `
+                <div class="quiz-question">
+                    <span class="q-idx">${index + 1}.</span>
+                    <pre class="formatted-question">${q.pytanie}</pre>
+                </div>
+                
+                ${codeSection}
+
+                <div class="quiz-options">
+                    ${options.map(opt => `
+                        <button class="opt-btn" 
+                                data-letter="${opt.letter}" 
+                                onclick="checkAnswer(this, '${opt.letter}', '${q.poprawna}')">
+                            ${opt.text}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            contentArea.appendChild(qDiv);
+        });
     } catch (err) {
         contentArea.innerHTML = `<h2 style="color:red;">Błąd: ${err.message}</h2>`;
     }
 }
+
+// Funkcja sprawdzająca odpowiedź
+function checkAnswer(btn, selected, correct) {
+    const parent = btn.parentElement;
+    const buttons = parent.querySelectorAll('.opt-btn');
+    
+    buttons.forEach(b => {
+        b.disabled = true;
+        const btnLetter = b.getAttribute('data-letter'); 
+
+        if (btnLetter === correct) {
+            b.classList.add('correct');
+        } else {
+            b.classList.add('wrong');
+        }
+    });
+}
+
 
 function showAddPanel() {
     const card = document.getElementById('add-card');
@@ -154,6 +222,7 @@ async function sendToDatabase() {
     const table = document.getElementById('table-select').value;
     const payload = {
         pytanie: document.getElementById('q_text').value,
+        code: document.getElementById('q_code').value.trim() || null,
         odp_a: document.getElementById('ans_a').value,
         odp_b: document.getElementById('ans_b').value,
         odp_c: document.getElementById('ans_c').value,
@@ -171,5 +240,5 @@ async function sendToDatabase() {
 }
 
 function clearForm() {
-    document.querySelectorAll('#add-card input').forEach(i => i.value = "");
+document.querySelectorAll('#add-card input, #add-card textarea').forEach(i => i.value = "");
 }
