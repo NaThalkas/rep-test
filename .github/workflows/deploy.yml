@@ -1,0 +1,24 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"] # Wykonaj przy każdym wrzuceniu kodu na main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Replace secrets in script.js
+        run: |
+          sed -i "s|%%SUPABASE_URL%%|${{ secrets.SUPABASE_URL }}|g" script.js
+          sed -i "s|%%SUPABASE_KEY%%|${{ secrets.SUPABASE_KEY }}|g" script.js
+          sed -i "s|%%APP_PASSWORD%%|${{ secrets.APP_PASSWORD }}|g" script.js
+
+      - name: Upload to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: . # Publikuje cały główny folder
+          branch: gh-pages # Tworzy specjalną wersję strony na tym branchu

@@ -1,0 +1,2 @@
+PO2_W,PO2,Wyklad,Programowanie Obiektowe
+PO2_L,PO2,Laboratorium,Programowanie Obiektowe
