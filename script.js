@@ -56,10 +56,16 @@ async function loadConfig() {
         tableData = [];
 
         lines.forEach(line => {
-            const [dbName, shortAlias, subMenu, mainTitle] = line.split(',');
-            tableData.push({ dbName, shortAlias, subMenu, mainTitle });
-            if (!menuStructure[mainTitle]) menuStructure[mainTitle] = [];
-            menuStructure[mainTitle].push({ dbName, subMenu });
+            const [dbName, shortAlias, subMenu, mainTitle, active] = line.split(',');
+            
+            // SPRAWDZENIE: Czy aktywna? (trim() usuwa zbędne spacje)
+            if (active && active.trim().toLowerCase() === 'true') {
+                tableData.push({ dbName, shortAlias, subMenu, mainTitle });
+                if (!menuStructure[mainTitle]) menuStructure[mainTitle] = [];
+                menuStructure[mainTitle].push({ dbName, subMenu });
+            } else {
+                console.log(`Pominięto nieaktywną tabele: ${dbName}`);
+            }
         });
 
         buildMenu(menuStructure);
