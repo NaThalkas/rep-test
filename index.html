@@ -21,9 +21,7 @@
     </nav>
 
     <div class="container">
-        <div class="card" id="add-card" style="display: none; margin-bottom: 20px;">
-            <h2 id="form-title">Nowy rekord</h2>
-            
+        <div class="card" id="add-card" style="display: none; margin-bottom: 20px;">        
             <label>Dodawanie do:</label>
             <select id="table-select"></select>
 
@@ -32,6 +30,9 @@
             <label>Treść pytania:</label>
             <input type="text" id="q_text" placeholder="Wpisz treść pytania...">
             
+            <label>Kod (opcjonalnie):</label>
+            <textarea id="q_code" rows="5" placeholder="Wklej tutaj kod..."></textarea>
+
             <div class="grid-inputs">
                 <div><label>Opcja A:</label><input type="text" id="ans_a"></div>
                 <div><label>Opcja B:</label><input type="text" id="ans_b"></div>
