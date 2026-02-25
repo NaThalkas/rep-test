@@ -193,7 +193,7 @@ function checkAnswer(btn, selected, correct) {
     
     buttons.forEach(b => {
         b.disabled = true;
-        const btnLetter = b.getAttribute('data-letter'); 
+        const btnLetter = b.getAttribute('data-letter').toUpperCase(); 
 
         if (btnLetter === correct) {
             b.classList.add('correct');
@@ -227,7 +227,7 @@ async function sendToDatabase() {
         odp_b: document.getElementById('ans_b').value,
         odp_c: document.getElementById('ans_c').value,
         odp_d: document.getElementById('ans_d').value,
-        poprawna: document.getElementById('correct_ans').value
+        poprawna: document.getElementById('correct_ans').value.toUpperCase()
     };
 
     const { error } = await sbClient.from(table).insert([payload]);
