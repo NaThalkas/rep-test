@@ -227,7 +227,7 @@ async function sendToDatabase() {
         odp_b: document.getElementById('ans_b').value,
         odp_c: document.getElementById('ans_c').value,
         odp_d: document.getElementById('ans_d').value,
-        poprawna: document.getElementById('correct_ans').value.toUpperCase()
+        poprawna: document.getElementById('correct_ans').value
     };
 
     const { error } = await sbClient.from(table).insert([payload]);
