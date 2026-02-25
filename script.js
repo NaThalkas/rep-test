@@ -23,7 +23,7 @@ function initSupabase() {
         console.log("🌐 Tryb produkcyjny (GitHub)");
         SUPABASE_URL = "https://rdyyrjgolxxvzumcmjlb.supabase.co";
         SUPABASE_KEY = "sb_publishable_3KJmCBUaBR6Yup-yd92POQ_FaCacMBr";
-        APP_PASSWORD = "JacaPraca";
+        APP_PASSWORD = "scyzoryk";
     }
 
     if (SUPABASE_URL && SUPABASE_URL.startsWith("http")) {
@@ -227,7 +227,7 @@ async function sendToDatabase() {
         odp_b: document.getElementById('ans_b').value,
         odp_c: document.getElementById('ans_c').value,
         odp_d: document.getElementById('ans_d').value,
-        poprawna: document.getElementById('correct_ans').value.toUpperCase()
+        poprawna: document.getElementById('correct_ans').value
     };
 
     const { error } = await sbClient.from(table).insert([payload]);
