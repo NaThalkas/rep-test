@@ -1,10 +1,11 @@
+/* --- OGÓLNE --- */
 body { 
     font-family: 'Segoe UI', sans-serif; 
     margin: 0; 
     background: #f0f2f5; 
 }
 
-/* Navbar - usunięto stałą wysokość, dodano elastyczność */
+/* --- NAVBAR --- */
 .navbar { 
     background: #2c3e50; 
     display: flex; 
@@ -16,7 +17,6 @@ body {
     z-index: 1000;
 }
 
-/* Styl Dropdownu */
 .dropdown { position: relative; display: inline-block; }
 
 .dropbtn { 
@@ -69,11 +69,10 @@ body {
     font-size: 14px;
 }
 
-/* --- FORMULARZ - POPRAWIONE OKNO KODU I LABELE --- */
+/* --- FORMULARZ DODAWANIA --- */
 .container { max-width: 800px; margin: 20px auto; padding: 20px; }
 .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
 
-/* Wymuszenie labela nad polem */
 .card label {
     display: block;
     margin-top: 10px;
@@ -81,33 +80,38 @@ body {
     font-weight: bold;
 }
 
-/* Ujednolicenie szerokości wszystkich wejść i okna na kod */
 input, select, textarea { 
     width: 100%; 
     padding: 10px; 
     margin: 5px 0 15px 0; 
     border: 1px solid #ccc; 
     border-radius: 4px; 
-    box-sizing: border-box; /* Kluczowe: szerokość 100% liczy się z paddingiem */
+    box-sizing: border-box; 
     font-family: inherit;
 }
 
-/* Okno na kod w formularzu */
 textarea {
     min-height: 100px;
     font-family: 'Consolas', 'Monaco', monospace;
-    resize: vertical; /* Pozwala zmieniać wysokość, szerokość sztywna na 100% */
+    resize: vertical;
 }
 
 .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.grid-inputs label { margin-top: 5px; } /* Mniejszy margines w siatce opcji */
+.grid-inputs label { margin-top: 5px; }
 
-.submit-btn { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+.submit-btn { 
+    width: 100%; 
+    padding: 15px; 
+    background: #27ae60; 
+    color: white; 
+    border: none; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    margin-top: 20px; 
+}
 
-/* --- RESZTA STYLÓW --- */
-#login-overlay { position: fixed; inset: 0; background: #2c3e50; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
-#login-overlay input { width: 200px; text-align: center; }
-
+/* --- QUIZ CARDS --- */
 .quiz-card {
     background: white;
     padding: 20px;
@@ -116,13 +120,42 @@ textarea {
     margin-bottom: 25px;
 }
 
+/* UKŁAD PYTANIA: Numer + Ikona + Treść w jednej linii */
 .quiz-question {
-    font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 15px;
     color: #2c3e50;
+    display: flex;            /* Włącza układ liniowy */
+    align-items: flex-start;  /* Wyrównuje do góry pierwszej linii */
+    gap: 10px;                /* Odstęp między elementami */
+    line-height: 1.5; /* Spójna wysokość linii dla ID i tekstu */
 }
 
+.q-idx {
+    flex-shrink: 0;           /* Numer się nie zwęża */
+    font-size: 16px;   /* Taki sam rozmiar jak tekst pytania */
+    font-weight: 600;  /* Pogrubienie dla numeru */
+}
+
+.verification-container {
+    flex-shrink: 0;           /* Ikona się nie zwęża */
+    margin-top: 2px;          /* Opadnięcie ikony do linii tekstu */
+    font-size: 16px;
+    cursor: help;
+}
+
+.formatted-question {
+    display: block;           /* Wypełnia resztę wiersza */
+    white-space: pre-wrap;    /* Zawijanie tekstu z zachowaniem enterów */
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 16px;
+    font-weight: 600;  /* Jeśli chcesz, by pytanie też było pogrubione */
+    margin: 0;
+    flex-grow: 1;
+    line-height: 1.5;  /* Identyczna wysokość linii */
+}
+
+/* --- OPCJE ODPOWIEDZI --- */
 .quiz-options {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -159,10 +192,7 @@ textarea {
     color: #721c24 !important;
 }
 
-@media (max-width: 600px) {
-    .quiz-options { grid-template-columns: 1fr; }
-}
-
+/* --- KOD --- */
 .code-container {
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;
@@ -180,13 +210,43 @@ textarea {
     font-size: 14px;
     line-height: 1.6;
     color: #333;
-    text-align: left;
 }
 
-.formatted-question {
-    display: inline-block; /* Poprawka zawijania */
-    white-space: pre-wrap; 
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 16px;
-    margin: 0;
+/* --- NOTA (WYJAŚNIENIE) --- */
+.question-note {
+    display: none; /* Domyślnie ukryta, JS zmienia na block */
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #e8f4fd; 
+    border-left: 4px solid #3498db;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    line-height: 1.5;
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* --- DODATKI --- */
+#login-overlay { 
+    position: fixed; 
+    inset: 0; 
+    background: #2c3e50; 
+    color: white; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 2000; 
+}
+
+#login-overlay input { width: 200px; text-align: center; }
+
+@media (max-width: 600px) {
+    .quiz-options { grid-template-columns: 1fr; }
+    .quiz-question { font-size: 1rem; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }

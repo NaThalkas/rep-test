@@ -127,7 +127,7 @@ async function setTable(name) {
     contentArea.innerHTML = `<h2>${displayTitle}</h2>`;
 
     try {
-        const { data, error } = await sbClient.from(name).select('*');
+        const { data, error } = await sbClient.from(name).select('*').order('id', { ascending: true });
         if (error) throw error;
 
         data.forEach((q, index) => {
@@ -163,22 +163,26 @@ async function setTable(name) {
             // 3. Generowanie HTML z wymieszanymi przyciskami
             qDiv.innerHTML = `
                 <div class="quiz-question">
-                    <span class="q-idx">${index + 1}.</span>
-                    <pre class="formatted-question">${q.pytanie}</pre>
-                </div>
-                
-                ${codeSection}
+                        ${getVerificationHTML(q.weryfikacja)} 
+                        
+                        <span class="q-idx">${q.id}.</span>
+                        
+                        <pre class="formatted-question">${q.pytanie}</pre>
+                    </div>
+                    
+                    ${codeSection}
 
-                <div class="quiz-options">
-                    ${options.map(opt => `
-                        <button class="opt-btn" 
-                                data-letter="${opt.letter}" 
-                                onclick="checkAnswer(this, '${opt.letter}', '${q.poprawna}')">
-                            ${opt.text}
-                        </button>
-                    `).join('')}
-                </div>
-            `;
+                    <div class="quiz-options">
+                        ${options.map(opt => `
+                            <button class="opt-btn" 
+                                    data-letter="${opt.letter}" 
+                                    onclick="checkAnswer(this, '${opt.letter}', '${q.poprawna}', '${q.id}')">
+                                ${opt.text}
+                            </button>
+                        `).join('')}
+                    </div>
+
+                ${q.note ? `<div id="nota-${q.id}" class="question-note"><strong>Nota:</strong> ${q.note}</div>` : ''}            `;
             contentArea.appendChild(qDiv);
         });
     } catch (err) {
@@ -187,20 +191,28 @@ async function setTable(name) {
 }
 
 // Funkcja sprawdzająca odpowiedź
-function checkAnswer(btn, selected, correct) {
-    const parent = btn.parentElement;
+function checkAnswer(btn, selected, correct, qId) {
+    const parent = btn.closest('.quiz-card'); // Bezpieczniejsze szukanie kontenera
     const buttons = parent.querySelectorAll('.opt-btn');
     
     buttons.forEach(b => {
         b.disabled = true;
         const btnLetter = b.getAttribute('data-letter').toUpperCase(); 
-
         if (btnLetter === correct) {
             b.classList.add('correct');
-        } else {
+        } else if (btnLetter === selected) {
             b.classList.add('wrong');
         }
     });
+
+    // Szukamy noty
+    const notaElement = document.getElementById(`nota-${qId}`);
+    if (notaElement) {
+        console.log("Znaleziono notę dla pytania:", qId);
+        notaElement.style.setProperty('display', 'block', 'important'); // Wymuszamy pokazanie
+    } else {
+        console.log("Nie znaleziono elementu o ID:", `nota-${qId}`);
+    }
 }
 
 
@@ -227,7 +239,8 @@ async function sendToDatabase() {
         odp_b: document.getElementById('ans_b').value,
         odp_c: document.getElementById('ans_c').value,
         odp_d: document.getElementById('ans_d').value,
-        poprawna: document.getElementById('correct_ans').value
+        poprawna: document.getElementById('correct_ans').value,
+        note: document.getElementById('q_nota').value.trim() || null         // NOWE
     };
 
     const { error } = await sbClient.from(table).insert([payload]);
@@ -241,4 +254,39 @@ async function sendToDatabase() {
 
 function clearForm() {
 document.querySelectorAll('#add-card input, #add-card textarea').forEach(i => i.value = "");
+}
+
+function getVerificationHTML(status) {
+    // Jeśli status to null, undefined lub pusty ciąg - nie pokazuj nic
+    if (!status || status.toString().trim().toLowerCase() === "null" || status.trim() === "") {
+        return '';
+    }
+
+    const cleanStatus = status.toString().trim().toUpperCase();
+
+    // 1. Przypadek: PSK (Zielony ptaszek)
+    if (cleanStatus === 'PSK') {
+        return `
+            <div class="verification-container" title="To pytanie zostało zweryfikowane" style="display: inline-block; margin-left: 8px; color: #27ae60; cursor: help;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+        `;
+    }
+
+    // 2. Przypadek: NONE (Czerwony X)
+    if (cleanStatus === 'NONE') {
+        return `
+            <div class="verification-container" title="To pytanie nie zostało zweryfikowane" style="display: inline-block; margin-left: 8px; color: #e74c3c; cursor: help;">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+        `;
+    }
+
+    // 3. Każdy inny status (np. Personal, Self, itp.) - Żółty pytajnik
+    // Tutaj wpadnie wszystko, co nie jest PSK ani NONE
+    return `
+        <div class="verification-container" title="To pytanie jest częściowo prawidłowe, fragment pytania lub poprawna odpowiedź pokrywaj się z pytaniami z egzaminu" style="display: inline-block; margin-left: 8px; color: #f1c40f; cursor: help;">
+            <i class="fa-solid fa-circle-question"></i>
+        </div>
+    `;
 }
